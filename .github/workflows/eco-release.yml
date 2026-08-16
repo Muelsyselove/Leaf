@@ -40,7 +40,7 @@ jobs:
           VERSION="${{ steps.ver.outputs.version }}"
           ARCHIVE="ecology-section-archive-${VERSION}-eco.tar.gz"
           git archive --format=tar.gz -o "$ARCHIVE" HEAD
-          tar -tzf "$ARCHIVE" | grep -qx "eco-manifest.json"
+          tar -tzf "$ARCHIVE" | grep -x "eco-manifest.json" > /dev/null
 
       - name: 发布 Release（仅 ECO 压缩包，不附带安装器）
         uses: softprops/action-gh-release@v2
