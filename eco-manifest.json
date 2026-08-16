@@ -1,0 +1,12 @@
+{
+  "spec": "eco/1",
+  "name": "ecology-section-archive",
+  "displayName": "生态科档案 Ecology Section Archive",
+  "version": "1.1.0",
+  "description": "莱茵生命生态科风格的本地 Markdown 便签档案终端（Tauri 2 + React）",
+  "launch": {
+    "command": "npm",
+    "args": ["run", "start"]
+  },
+  "dependencies": [{ "type": "npm", "command": "npm", "args": ["install"] }]
+}

@@ -1,0 +1,51 @@
+name: eco-release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  pack:
+    name: 打包 ECO 压缩包并发布
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 校验版本号与 eco-manifest 一致
+        id: ver
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tags must use the form vMAJOR.MINOR.PATCH: $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          for f in package.json eco-manifest.json src-tauri/tauri.conf.json; do
+            actual="$(jq -r '.version' "$f")"
+            if [[ "$actual" != "$VERSION" ]]; then
+              echo "Version mismatch in $f: expected $VERSION, got $actual" >&2
+              exit 1
+            fi
+          done
+          jq -e '.spec == "eco/1" and has("launch")' eco-manifest.json > /dev/null
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: 打入 ECO 压缩包（完整源码树，eco-manifest.json 位于根部）
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+          ARCHIVE="ecology-section-archive-${VERSION}-eco.tar.gz"
+          git archive --format=tar.gz -o "$ARCHIVE" HEAD
+          tar -tzf "$ARCHIVE" | grep -qx "eco-manifest.json"
+
+      - name: 发布 Release（仅 ECO 压缩包，不附带安装器）
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "生态科档案 v${{ steps.ver.outputs.version }}"
+          body_path: "Docs/release-note/${{ steps.ver.outputs.version }}.md"
+          files: "*-eco.tar.gz"
+          fail_on_unmatched_files: true
